@@ -1,6 +1,8 @@
 from morphocut import Node, Output, ReturnOutputs
 import numpy as np
-from morphocut.image import RegionProperties
+from morphocut.image import RegionProperties, RawOrVariable
+from skimage.measure import label as sklabel
+from scipy import ndimage as ndi
 
 
 class DummyRegionProps:
@@ -35,20 +37,35 @@ class DummyRegionProps:
 @ReturnOutputs
 @Output("regionprops")
 class SafeImageProperties(Node):
-    def __init__(self, mask, image):
+    def __init__(self, mask: RawOrVariable, image: RawOrVariable = None):
         super().__init__()
         self.mask = mask
         self.image = image
 
     def transform(self, mask: np.ndarray, image: np.ndarray):
-        if np.count_nonzero(mask) == 0:
+        binmask = (mask != 0)
+        if not np.any(binmask):
             print("[WARNING] Empty mask — returning DummyRegionProps.")
             return DummyRegionProps(mask.shape)
+
+        labels, nlabels = sklabel(binmask, return_num=True)
+
+        if nlabels == 1:
+            chosen_label = 1
         else:
-            return RegionProperties(
-                tuple(slice(0, s) for s in mask.shape),
-                True,
-                mask,
-                image,
-                True,
-            )
+            counts = np.bincount(labels.ravel())
+            counts[0] = 0  # ignore background
+            chosen_label = int(np.argmax(counts))
+
+        obj_slices = ndi.find_objects(labels, nlabels)
+        slices = obj_slices[chosen_label - 1]
+        if slices is None:
+            return DummyRegionProps(mask.shape)
+
+        return RegionProperties(
+            slices,
+            chosen_label,
+            labels,
+            image,
+            True,
+        )
