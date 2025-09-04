@@ -1,7 +1,7 @@
 import os
 from morphocut.core import Pipeline, Call
 from morphocut.file import Find, Glob
-from morphocut.image import ImageReader
+from morphocut.image import ImageReader, FindRegions
 from holocontour.image.safe_image_properties import SafeImageProperties
 from morphocut.stream import Progress
 from morphocut.str import Format
