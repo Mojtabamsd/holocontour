@@ -17,6 +17,7 @@ contour:
   median: false
   hist_match: true
   ref_path: 'src\holocontour\data\001-4923.pgm(406,428)-Z43.50.png'
+  keep_init_mask: false
 
 input_metadata:
   lat: 54.0123

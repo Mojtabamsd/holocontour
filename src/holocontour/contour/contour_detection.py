@@ -63,7 +63,8 @@ def find_contours(img_org,
                  save_plot=False,
                  median=False,
                  hist_match=False,
-                 ref_path=None):
+                 ref_path=None,
+                 keep_initial_mask=False):
 
     img = img_org.copy()
 
@@ -96,7 +97,9 @@ def find_contours(img_org,
                 plot = plot_segmentation_result(img_org, outer, final_contours)
             else:
                 plot = None
-            return final_mask > 0, plot
+
+            return (polygon2mask(img_org.shape[:2], outer) if keep_initial_mask else final_mask) > 0, plot
+
         else:
             attempt += 1
             avg_thresh += increase_avg
