@@ -14,14 +14,17 @@ with open("path/to/sample_config.yaml") as f:
 
 contour_params = {
     "avg_thresh": 81,
-    "max_attempts": 5,
+    "max_attempts": 10,
     "increase_avg": 5,
-    "min_contour_area": 30,
     "seed_thresh": 45,
-    "save_plot": True,
+    "min_contour_area": 30,
     "median": False,
     "hist_match": True,
     "ref_path": 'src\holocontour\data\001-4923.pgm(406,428)-Z43.50.png'
+    "sharpening_alpha": 1,
+    "median_blur_ksize": 5,
+    "keep_init_mask": False,
+    "save_plot": True,
 }
 
 metadata = {
