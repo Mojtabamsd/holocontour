@@ -19,3 +19,27 @@ def apply_histogram_matching(img, ref_path):
     matched = match_histograms(img, ref)
     matched = np.clip(matched, img.min(), img.max())
     return matched.astype(img.dtype)
+
+
+def get_sharpening_kernel(size: int):
+    """
+    Generate a sharpening kernel of given size (odd number).
+    Example:
+        size=3 -> [[0, -1, 0], [-1, 5, -1], [0, -1, 0]]
+        size=5 -> 5x5 version with cross neighbors -1
+    """
+    if size % 2 == 0 or size < 3:
+        raise ValueError("Kernel size must be an odd integer >= 3")
+
+    kernel = np.zeros((size, size), dtype=np.float32)
+
+    # Put -1 in cross neighbors
+    center = size // 2
+    for i in range(size):
+        kernel[center, i] = -1   # horizontal line
+        kernel[i, center] = -1   # vertical line
+
+    # Set center value (sum of negatives * -1 + 1)
+    kernel[center, center] = -np.sum(kernel)
+
+    return kernel
