@@ -6,7 +6,7 @@ from holocontour.image.structure_forest import generate_mask
 from holocontour.contour.toolsbox import contour_mask_union, filter_contours_by_intensity
 from holocontour.image.visual import plot_segmentation_result
 from holocontour.image.region_growing import region_grow
-from holocontour.image.processing import apply_histogram_matching, find_darkest_point
+from holocontour.image.processing import apply_histogram_matching, find_darkest_point, get_sharpening_kernel
 
 
 def process_mask(img_org,
@@ -64,14 +64,21 @@ def find_contours(img_org,
                  median=False,
                  hist_match=False,
                  ref_path=None,
-                 keep_initial_mask=False):
+                 keep_init_mask=False,
+                 median_blur_ksize=5,
+                 sharpening_alpha=0):
 
     img = img_org.copy()
 
     if hist_match and ref_path:
         img = apply_histogram_matching(img_org, ref_path)
 
-    img = cv2.medianBlur(img, 5)
+    blur = cv2.GaussianBlur(img, (3, 3), 0)
+    img = cv2.addWeighted(img, 1 + sharpening_alpha, blur, -sharpening_alpha, 0)
+
+    if median_blur_ksize > 1:
+        img = cv2.medianBlur(img, median_blur_ksize)
+
     init_mask = generate_mask(img)
 
     if np.count_nonzero(init_mask) == 0:
@@ -98,7 +105,7 @@ def find_contours(img_org,
             else:
                 plot = None
 
-            return (polygon2mask(img_org.shape[:2], outer) if keep_initial_mask else final_mask) > 0, plot
+            return (polygon2mask(img_org.shape[:2], outer) if keep_init_mask else final_mask) > 0, plot
 
         else:
             attempt += 1
