@@ -23,6 +23,8 @@ contour_params = {
     "ref_path": 'src\holocontour\data\001-4923.pgm(406,428)-Z43.50.png'
     "sharpening_alpha": 1,
     "median_blur_ksize": 5,
+    "erode_ksize": 1
+    "convex_hull": True
     "keep_init_mask": False,
     "save_plot": True,
 }
@@ -33,7 +35,6 @@ metadata = {
     "date": None,
     "ext": ".png"
 }
-
 
 
 pipeline_run(
