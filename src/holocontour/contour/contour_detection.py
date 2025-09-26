@@ -15,9 +15,10 @@ def process_mask(img_org,
                  min_contour_area,
                  seed_thresh,
                  median,
-                 erode_ksize):
+                 erode_ksize,
+                 convex_hull):
 
-    seed = find_darkest_point(img_org, generate_mask(img) > 0)
+    seed = find_darkest_point(img_org, generate_mask(img, use_convex_hull=convex_hull) > 0)
     seg_mask = region_grow(img, seed)
 
     contours = measure.find_contours(seg_mask, 0.5)
@@ -39,9 +40,7 @@ def process_mask(img_org,
 
     union = contour_mask_union(valid_contours, img_org.shape)
 
-    # outer = max(measure.find_contours(generate_mask(img), 0.5), key=len)
-
-    outer_first = max(measure.find_contours(generate_mask(img), 0.5), key=len)
+    outer_first = max(measure.find_contours(generate_mask(img, use_convex_hull=convex_hull), 0.5), key=len)
     init_mask_poly = polygon2mask(img_org.shape[:2], outer_first)
     eroded_init_mask = erode_mask(init_mask_poly, kernel_size=erode_ksize)
     outer = max(measure.find_contours(eroded_init_mask, 0.5), key=len)
@@ -72,6 +71,7 @@ def find_contours(img_org,
                  hist_match=False,
                  ref_path=None,
                  erode_ksize=3,
+                 convex_hull=False,
                  keep_init_mask=False,
                  median_blur_ksize=5,
                  sharpening_alpha=0):
@@ -87,7 +87,7 @@ def find_contours(img_org,
     if median_blur_ksize > 1:
         img = cv2.medianBlur(img, median_blur_ksize)
 
-    init_mask = generate_mask(img)
+    init_mask = generate_mask(img, use_convex_hull=convex_hull)
 
     if np.count_nonzero(init_mask) == 0:
         print("[WARNING] Empty init_mask — skipping image.")
@@ -104,7 +104,8 @@ def find_contours(img_org,
             min_contour_area,
             seed_thresh,
             median,
-            erode_ksize
+            erode_ksize,
+            convex_hull
         )
 
         if np.count_nonzero(final_mask) > 0:

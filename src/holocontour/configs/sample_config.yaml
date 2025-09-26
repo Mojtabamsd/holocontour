@@ -19,6 +19,7 @@ contour:
   sharpening_alpha: 1
   median_blur_ksize: 3
   erode_ksize: 1
+  convex_hull: true
   keep_init_mask: true
   save_plot: true
 
