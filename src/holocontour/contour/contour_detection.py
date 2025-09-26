@@ -6,7 +6,7 @@ from holocontour.image.structure_forest import generate_mask
 from holocontour.contour.toolsbox import contour_mask_union, filter_contours_by_intensity
 from holocontour.image.visual import plot_segmentation_result
 from holocontour.image.region_growing import region_grow
-from holocontour.image.processing import apply_histogram_matching, find_darkest_point, get_sharpening_kernel
+from holocontour.image.processing import apply_histogram_matching, find_darkest_point, get_sharpening_kernel, erode_mask
 
 
 def process_mask(img_org,
@@ -14,7 +14,8 @@ def process_mask(img_org,
                  avg_thresh,
                  min_contour_area,
                  seed_thresh,
-                 median):
+                 median,
+                 erode_ksize):
 
     seed = find_darkest_point(img_org, generate_mask(img) > 0)
     seg_mask = region_grow(img, seed)
@@ -38,7 +39,13 @@ def process_mask(img_org,
 
     union = contour_mask_union(valid_contours, img_org.shape)
 
-    outer = max(measure.find_contours(generate_mask(img), 0.5), key=len)
+    # outer = max(measure.find_contours(generate_mask(img), 0.5), key=len)
+
+    outer_first = max(measure.find_contours(generate_mask(img), 0.5), key=len)
+    init_mask_poly = polygon2mask(img_org.shape[:2], outer_first)
+    eroded_init_mask = erode_mask(init_mask_poly, kernel_size=erode_ksize)
+    outer = max(measure.find_contours(eroded_init_mask, 0.5), key=len)
+
     init_mask_poly = polygon2mask(img_org.shape[:2], outer)
     union &= init_mask_poly
 
@@ -64,6 +71,7 @@ def find_contours(img_org,
                  median=False,
                  hist_match=False,
                  ref_path=None,
+                 erode_ksize=3,
                  keep_init_mask=False,
                  median_blur_ksize=5,
                  sharpening_alpha=0):
@@ -95,7 +103,8 @@ def find_contours(img_org,
             avg_thresh,
             min_contour_area,
             seed_thresh,
-            median
+            median,
+            erode_ksize
         )
 
         if np.count_nonzero(final_mask) > 0:
@@ -113,8 +122,12 @@ def find_contours(img_org,
             print(f"[INFO] Final mask empty — increasing avg_thresh to {avg_thresh} (attempt {attempt}/{max_attempts})")
 
     print("[WARNING] All attempts failed — returning initial mask.")
-    outer_contour = max(measure.find_contours(init_mask, 0.5), key=len)
-    final_mask = init_mask
+    outer_contour_first = max(measure.find_contours(init_mask, 0.5), key=len)
+    init_mask_poly = polygon2mask(img_org.shape[:2], outer_contour_first)
+    eroded_init_mask = erode_mask(init_mask_poly, kernel_size=erode_ksize)
+    outer_contour = max(measure.find_contours(eroded_init_mask, 0.5), key=len)
+
+    final_mask = eroded_init_mask
     final_contours = [outer_contour]
 
     if save_plot:

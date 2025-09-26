@@ -43,3 +43,40 @@ def get_sharpening_kernel(size: int):
     kernel[center, center] = -np.sum(kernel)
 
     return kernel
+
+
+def erode_mask(mask, kernel_size=3, iterations=1):
+    """
+    Erodes a binary mask using an elliptical kernel.
+
+    Parameters
+    ----------
+    mask : np.ndarray
+        Binary mask (0 and 255 values).
+    kernel_size : int
+        Size of the elliptical kernel (must be odd, e.g., 3, 5, 7).
+    iterations : int
+        How many times erosion is applied.
+
+    Returns
+    -------
+    eroded : np.ndarray
+        Eroded binary mask.
+    """
+    # Ensure kernel size is at least 1 and odd
+    kernel_size = max(1, kernel_size)
+    if kernel_size % 2 == 0:
+        kernel_size += 1
+
+    # Convert to uint8 0/255
+    if mask.dtype == np.bool_:
+        mask = mask.astype(np.uint8) * 255
+    elif mask.max() <= 1:
+        mask = (mask > 0).astype(np.uint8) * 255
+    else:
+        mask = mask.astype(np.uint8)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+    eroded = cv2.erode(mask, kernel, iterations=iterations)
+
+    return eroded > 0
